@@ -1,0 +1,93 @@
+CREATE DATABASE CinemaGoDB
+Go
+
+USE CinemaGoDB
+GO
+
+CREATE TABLE Users(
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    Username NVARCHAR(100) NOT NULL UNIQUE,
+    Email NVARCHAR(200) NOT NULL UNIQUE,
+    Password NVARCHAR(300) NOT NULL,
+    Balance DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    UserRole INT NOT NULL CHECK(UserRole IN (0, 1, 2))
+)
+GO
+
+CREATE TABLE Movies(
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    Title NVARCHAR(200) NOT NULL,
+    Director NVARCHAR(150) NOT NULL,
+    Genre NVARCHAR(100) NOT NULL,
+    Duration INT NOT NULL CHECK(Duration > 0),
+    AgeRating INT NOT NULL CHECK(AgeRating >= 0)
+)
+GO
+
+CREATE TABLE Halls(
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL
+)
+GO
+
+CREATE TABLE Seats(
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    HallId UNIQUEIDENTIFIER NOT NULL,
+    [Row] INT NOT NULL CHECK([Row] > 0),
+    Number INT NOT NULL CHECK(Number > 0),
+    SeatType INT NOT NULL CHECK(SeatType in (0, 1)),
+    CONSTRAINT FK_Seats_Halls FOREIGN KEY (HallId) REFERENCES Halls(Id),
+    CONSTRAINT UQ_Seats_Hall_Row_Number UNIQUE (HallId, [Row], Number)
+)
+GO
+
+CREATE TABLE Sessions(
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    MovieId UNIQUEIDENTIFIER NOT NULL,
+    HallId UNIQUEIDENTIFIER NOT NULL,
+    StartTime DATETIME2 NOT NULL,
+    StandardPrice DECIMAL(10, 2) NOT NULL CHECK(StandardPrice >= 0),
+    VipPrice DECIMAL(10, 2) NOT NULL CHECK(VipPrice >= 0),
+    Status INT NOT NULL CHECK(Status IN (0, 1)),
+    CONSTRAINT FK_Sessions_Movies FOREIGN KEY (MovieId) REFERENCES Movies(Id),
+    CONSTRAINT FK_Sessions_Halls FOREIGN KEY (HallId) REFERENCES Halls(Id)
+)
+GO
+
+CREATE TABLE Bookings(
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    UserId UNIQUEIDENTIFIER NOT NULL,
+    SessionId UNIQUEIDENTIFIER NOT NULL,
+    Status INT NOT NULL CHECK(Status IN (0, 1)),
+    CONSTRAINT FK_Bookings_Users FOREIGN KEY (UserId) REFERENCES Users(Id),
+    CONSTRAINT FK_Bookings_Sessions FOREIGN KEY  (SessionId) REFERENCES Sessions(Id)
+)
+GO
+
+CREATE TABLE BookingSeats(
+    BookingId UNIQUEIDENTIFIER NOT NULL,
+    SeatId UNIQUEIDENTIFIER NOT NULL,
+    CONSTRAINT PK_BookingSeats PRIMARY KEY (BookingId, SeatId),
+    CONSTRAINT FK_BookingSeats_BookingId FOREIGN KEY (BookingId) REFERENCES Bookings(Id),
+    CONSTRAINT FK_BookingSeats_SeatId FOREIGN KEY (SeatId) REFERENCES  Seats(Id)
+)
+GO
+
+CREATE TABLE Tickets(
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    BookingId UNIQUEIDENTIFIER NOT NULL,
+    SeatId UNIQUEIDENTIFIER NOT NULL,
+    TicketCode NVARCHAR(300) NOT NULL UNIQUE ,
+    Price DECIMAL(10, 2) NOT NULL CHECK(Price >= 0),
+    TicketType INT NOT NULL CHECK(TicketType IN (0, 1)),
+    IsRefunded BIT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_Tickets_Bookings FOREIGN KEY (BookingId) REFERENCES Bookings(Id),
+    CONSTRAINT FK_Tickets_Seats FOREIGN KEY (SeatId) REFERENCES Seats(Id),
+    CONSTRAINT UQ_Tickets_Booking_Seat UNIQUE (BookingId, SeatId)
+)
+GO
+
+
+
+
+
